@@ -1,53 +1,115 @@
-import { propertyService } from "../services/property.service.js";
+import { Property } from "../models/index.js";
 
-export const propertyController = {
-  create(req, res, next) {
-    try {
-      const property = propertyService.create(req.body);
-      res.status(201).json(property);
-    } catch (err) {
-      next(err);
-    }
-  },
+/**
 
-  getAll(req, res) {
-    res.json(propertyService.getAll());
-  },
+* 🔹 Criar imóvel
+  */
+  export const createProperty = async (
+  req,
+  res,
+  next
+  ) => {
+  try {
+  const property =
+  await Property.create(req.body);
 
-  // 🔥 GET BY ID COMPLETO
-  getById(req, res, next) {
-    try {
-      const { id } = req.params;
-
-      if (!id) {
-        return res.status(400).json({
-          error: "ID é obrigatório"
-        });
-      }
-
-      const property = propertyService.getById(id);
-
-      res.json(property);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  update(req, res, next) {
-    try {
-      const property = propertyService.update(req.params.id, req.body);
-      res.json(property);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  delete(req, res, next) {
-    try {
-      propertyService.delete(req.params.id);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
+  res.status(201).json(property);
+  } catch (error) {
+  next(error);
   }
-};
+  };
+
+/**
+
+* 🔹 Listar imóveis
+  */
+  export const getAllProperties =
+  async (req, res, next) => {
+  try {
+  const properties =
+  await Property.findAll();
+
+  res.status(200).json(properties);
+  } catch (error) {
+  next(error);
+  }
+  };
+
+/**
+
+* 🔹 Buscar imóvel por ID
+  */
+  export const getPropertyById =
+  async (req, res, next) => {
+  try {
+  const property =
+  await Property.findByPk(
+  req.params.id
+  );
+
+  if (!property) {
+  return res.status(404).json({
+  error:
+  "Imóvel não encontrado",
+  });
+  }
+
+  res.status(200).json(property);
+  } catch (error) {
+  next(error);
+  }
+  };
+
+/**
+
+* 🔹 Atualizar imóvel
+  */
+  export const updateProperty =
+  async (req, res, next) => {
+  try {
+  const property =
+  await Property.findByPk(
+  req.params.id
+  );
+
+  if (!property) {
+  return res.status(404).json({
+  error:
+  "Imóvel não encontrado",
+  });
+  }
+
+  await property.update(req.body);
+
+  res.status(200).json(property);
+  } catch (error) {
+  next(error);
+  }
+  };
+
+/**
+
+* 🔹 Deletar imóvel
+  */
+  export const deleteProperty =
+  async (req, res, next) => {
+  try {
+  const property =
+  await Property.findByPk(
+  req.params.id
+  );
+
+  if (!property) {
+  return res.status(404).json({
+  error:
+  "Imóvel não encontrado",
+  });
+  }
+
+  await property.destroy();
+
+  res.status(204).send();
+  } catch (error) {
+  next(error);
+  }
+  };
