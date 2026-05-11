@@ -4,21 +4,39 @@
 
 import { Sequelize } from "sequelize";
 
+/**
+ * 🔹 Verifica se está em ambiente de teste
+ */
+const isTest =
+  process.env.NODE_ENV === "test";
+
+/**
+ * 🔹 Configuração SQLite
+ */
 const sequelize = new Sequelize({
   dialect: "sqlite",
 
-  storage: "./imoveis.db",
+  storage: isTest
+    ? "./imoveis.test.db"
+    : "./imoveis.db",
 
   logging: false,
 });
 
+/**
+ * 🔹 Conectar banco
+ */
 export const connectDatabase =
   async () => {
     try {
       await sequelize.authenticate();
 
       console.log(
-        "✅ Banco SQLite conectado."
+        `✅ Banco conectado: ${
+          isTest
+            ? "imoveis.test.db"
+            : "imoveis.db"
+        }`
       );
     } catch (error) {
       console.error(

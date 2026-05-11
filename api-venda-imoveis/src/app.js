@@ -11,11 +11,21 @@ const port = 3000;
 app.use(express.json());
 
 /**
+ * 🔹 Ambiente
+ */
+const isTest =
+  process.env.NODE_ENV === "test";
+
+/**
  * 🔹 Configuração Sequelize + SQLite
  */
 const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: "./imoveis.db",
+
+  storage: isTest
+    ? "./imoveis.test.db"
+    : "./imoveis.db",
+
   logging: false,
 });
 
@@ -85,9 +95,12 @@ const Property = sequelize.define(
  * 🔹 Inserir imóveis automáticos
  */
 const seedDatabase = async () => {
-  const total = await Property.count();
+
+  const total =
+    await Property.count();
 
   if (total === 0) {
+
     await Property.bulkCreate([
       {
         title: "Casa Moderna",
@@ -134,7 +147,6 @@ const seedDatabase = async () => {
 
 /**
  * 🔹 Rota principal
- * Evita precisar digitar /imoveis
  */
 app.get("/", (req, res) => {
   res.redirect("/imoveis");
@@ -158,12 +170,16 @@ app.get("/status", (req, res) => {
  * 🔹 Criar imóvel
  */
 app.post("/imoveis", async (req, res) => {
+
   try {
+
     const property =
       await Property.create(req.body);
 
     res.status(201).json(property);
+
   } catch (error) {
+
     res.status(500).json({
       error: error.message,
     });
@@ -174,12 +190,16 @@ app.post("/imoveis", async (req, res) => {
  * 🔹 Listar imóveis
  */
 app.get("/imoveis", async (req, res) => {
+
   try {
+
     const properties =
       await Property.findAll();
 
     res.status(200).json(properties);
+
   } catch (error) {
+
     res.status(500).json({
       error: error.message,
     });
@@ -190,13 +210,16 @@ app.get("/imoveis", async (req, res) => {
  * 🔹 Buscar imóvel por ID
  */
 app.get("/imoveis/:id", async (req, res) => {
+
   try {
+
     const property =
       await Property.findByPk(
         req.params.id
       );
 
     if (!property) {
+
       return res.status(404).json({
         message:
           "Imóvel não encontrado",
@@ -204,7 +227,9 @@ app.get("/imoveis/:id", async (req, res) => {
     }
 
     res.status(200).json(property);
+
   } catch (error) {
+
     res.status(500).json({
       error: error.message,
     });
@@ -215,13 +240,16 @@ app.get("/imoveis/:id", async (req, res) => {
  * 🔹 Atualizar imóvel
  */
 app.put("/imoveis/:id", async (req, res) => {
+
   try {
+
     const property =
       await Property.findByPk(
         req.params.id
       );
 
     if (!property) {
+
       return res.status(404).json({
         message:
           "Imóvel não encontrado",
@@ -231,7 +259,9 @@ app.put("/imoveis/:id", async (req, res) => {
     await property.update(req.body);
 
     res.status(200).json(property);
+
   } catch (error) {
+
     res.status(500).json({
       error: error.message,
     });
@@ -244,13 +274,16 @@ app.put("/imoveis/:id", async (req, res) => {
 app.delete(
   "/imoveis/:id",
   async (req, res) => {
+
     try {
+
       const property =
         await Property.findByPk(
           req.params.id
         );
 
       if (!property) {
+
         return res.status(404).json({
           message:
             "Imóvel não encontrado",
@@ -260,7 +293,9 @@ app.delete(
       await property.destroy();
 
       res.status(204).send();
+
     } catch (error) {
+
       res.status(500).json({
         error: error.message,
       });
@@ -272,6 +307,7 @@ app.delete(
  * 🔹 Health Check
  */
 app.get("/health", (req, res) => {
+
   res.status(200).json({
     status: "OK",
     message:
@@ -293,6 +329,7 @@ app.use(
  * 🔹 404
  */
 app.use((req, res) => {
+
   res.status(404).json({
     error: "Rota não encontrada",
   });
@@ -302,6 +339,7 @@ app.use((req, res) => {
  * 🔹 Middleware global de erro
  */
 app.use((err, req, res, next) => {
+
   const status =
     err.statusCode || 500;
 
@@ -313,10 +351,17 @@ app.use((err, req, res, next) => {
 });
 
 /**
+ * 🔹 Variável do servidor
+ */
+let server;
+
+/**
  * 🔹 Inicialização única do servidor
  */
 const startServer = async () => {
+
   try {
+
     /**
      * 🔹 Conectar banco
      */
@@ -338,17 +383,22 @@ const startServer = async () => {
     /**
      * 🔹 Inserir imóveis iniciais
      */
-    await seedDatabase();
+    if (!isTest) {
+      await seedDatabase();
+    }
 
     /**
      * 🔹 Inicializar servidor
      */
-    app.listen(port, () => {
+    server = app.listen(port, () => {
+
       console.log(
         `🚀 API rodando em http://localhost:${port}`
       );
     });
+
   } catch (error) {
+
     console.error(
       "❌ Erro ao iniciar servidor:",
       error
@@ -356,11 +406,21 @@ const startServer = async () => {
   }
 };
 
-startServer();
+/**
+ * 🔹 NÃO iniciar servidor durante testes
+ */
+if (!isTest) {
+  startServer();
+}
 
 /**
  * 🔹 EXPORTS
  */
-export { Property };
+export {
+  Property,
+  server,
+  sequelize,
+  startServer,
+};
 
 export default app;
